@@ -26,13 +26,19 @@ pipeline {
     }
 
     stage('Python: Install & Test') {
-      steps {
-        dir('python') {
-          sh 'python3 -m pip install --user pytest'
-          sh 'python3 -m pytest -q'
-        }
-      }
+  agent {
+    docker { image 'python:3.12-slim' }
+  }
+  steps {
+    dir('python') {
+      sh '''
+        python -V
+        pip install -q pytest
+        pytest -q
+      '''
     }
+  }
+}
   }
 
   post {
