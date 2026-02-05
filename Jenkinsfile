@@ -1,8 +1,8 @@
 pipeline {
   agent any
 
-  tools {
-    maven 'MavenNew'   // change this to your Jenkins Maven tool name
+  options {
+    timestamps()
   }
 
   stages {
@@ -25,26 +25,36 @@ pipeline {
       }
     }
 
-    stage('Python: Install & Test') {
-  agent {
-    docker { image 'python:3.12-slim' }
-  }
-  steps {
-    dir('python') {
-      sh '''
-        python -V
-        pip install -q pytest
-        pytest -q
-      '''
+    stage('Python: Test (Docker)') {
+      steps {
+        dir('python') {
+          script {
+            // Run python tests inside a python container so Jenkins doesn't need python3 installed
+            docker.image('python:3.12-slim').inside {
+              sh 'python -m pip install --upgrade pip'
+              sh 'pip install pytest'
+              sh 'pytest -q --junitxml=pytest-results.xml'
+            }
+          }
+        }
+      }
+      post {
+        always {
+          junit 'python/pytest-results.xml'
+        }
+      }
     }
-  }
-}
   }
 
   post {
+    success {
+      echo 'Pipeline finished: SUCCESS'
+    }
+    failure {
+      echo 'Pipeline finished: FAILURE'
+    }
     always {
-      echo "Pipeline finished: ${currentBuild.currentResult}"
+      echo 'Pipeline complete.'
     }
   }
 }
-
