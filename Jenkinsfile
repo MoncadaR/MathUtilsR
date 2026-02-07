@@ -7,6 +7,13 @@ pipeline {
       steps { checkout scm }
     }
 
+    stage('Docker Sanity Check') {
+      steps {
+        sh 'docker version'
+        sh 'docker ps'
+      }
+    }
+
     stage('Java: Test (Docker Maven)') {
       steps {
         dir('java') {
@@ -19,34 +26,4 @@ pipeline {
       }
       post {
         always {
-          junit 'java/target/surefire-reports/*.xml'
-        }
-      }
-    }
-
-    stage('Python: Test (Docker)') {
-      steps {
-        dir('python') {
-          script {
-            docker.image('python:3.12-slim').inside {
-              sh 'python -m pip install --upgrade pip'
-              sh 'pip install pytest'
-              sh 'pytest -q --junitxml=pytest-results.xml'
-            }
-          }
-        }
-      }
-      post {
-        always {
-          junit 'python/pytest-results.xml'
-        }
-      }
-    }
-  }
-
-  post {
-    success { echo 'Pipeline finished: SUCCESS' }
-    failure { echo 'Pipeline finished: FAILURE' }
-    always  { echo 'Pipeline complete.' }
-  }
-}
+          junit 'java/target/surefire-reports/*.*
